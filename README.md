@@ -191,9 +191,15 @@ Avaliado sobre 15 exemplos do dataset `datasets/bug_to_user_story.jsonl` usando 
 
 ### Evidências no LangSmith
 
-**Dashboard do projeto:** https://smith.langchain.com/projects/MBA
-
 **Prompt publicado:** https://smith.langchain.com/hub/mba-testewalter/bug_to_user_story_v2
+
+**Dataset MBA-eval com 15 exemplos:**
+
+![Dataset MBA-eval com 15 exemplos de bugs](docs/langsmith-dataset.png)
+
+**Tracing das execuções no projeto MBA:**
+
+![Tracing das execuções com scores no projeto MBA](docs/langsmith-tracing.png)
 
 **Output do terminal — avaliação final:**
 
