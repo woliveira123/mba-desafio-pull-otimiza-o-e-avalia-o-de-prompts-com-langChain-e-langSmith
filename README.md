@@ -14,7 +14,16 @@ Pipeline completo de Prompt Engineering que:
 
 ## Técnicas Aplicadas (Fase 2)
 
-### 1. Role Prompting (obrigatório)
+### 1. Few-shot Learning (obrigatório)
+
+**Por quê:** Exemplos concretos eliminam ambiguidade. O modelo "aprende" o padrão de saída esperado sem precisar de fine-tuning. Três exemplos progressivos (simples → médio → complexo) cobrem os diferentes tipos de bug do dataset e forçam o modelo a seguir exatamente o formato de User Story esperado.
+
+**Como foi aplicado:**
+- Exemplo 1 (simples): Bug de botão → User Story básica com 3 critérios Given-When-Then
+- Exemplo 2 (médio): Bug de webhook → User Story + seção de Contexto Técnico
+- Exemplo 3 (complexo): 4 problemas críticos → User Story com múltiplos grupos de critérios + Tasks
+
+### 2. Role Prompting (adicional)
 
 **Por quê:** Define uma persona especializada que orienta o tom, o vocabulário e o nível de detalhe das respostas. Um Product Manager Sênior tende a focar em valor de negócio e comunicação clara — exatamente o que uma User Story precisa.
 
@@ -23,15 +32,6 @@ Pipeline completo de Prompt Engineering que:
 Você é um Product Manager Sênior com 10+ anos de experiência em metodologias ágeis (Scrum, SAFe, XP).
 Sua especialidade é transformar relatos técnicos de bugs em User Stories claras, empáticas e acionáveis...
 ```
-
-### 2. Few-shot Learning (obrigatório)
-
-**Por quê:** Exemplos concretos eliminam ambiguidade. O modelo "aprende" o padrão de saída esperado sem precisar de fine-tuning. Três exemplos progressivos (simples → médio → complexo) cobrem os diferentes tipos de bug do dataset.
-
-**Como foi aplicado:**
-- Exemplo 1 (simples): Bug de botão → User Story básica com 3 critérios Given-When-Then
-- Exemplo 2 (médio): Bug de webhook → User Story + seção de Contexto Técnico
-- Exemplo 3 (complexo): 4 problemas críticos → User Story com múltiplos grupos de critérios + Tasks
 
 ### 3. Chain of Thought — CoT (adicional)
 
@@ -64,7 +64,7 @@ PASSO 5 - Adicione contexto técnico: preserve informações técnicas relevante
 │
 ├── prompts/
 │   ├── bug_to_user_story_v1.yml        # Prompt inicial (baixa qualidade)
-│   └── bug_to_user_story_v2.yml        # Prompt otimizado (sua entrega)
+│   └── bug_to_user_story_v2.yml        # Prompt otimizado (entrega)
 │
 ├── datasets/
 │   └── bug_to_user_story.jsonl         # 15 exemplos de bugs (já incluso)
@@ -106,30 +106,29 @@ pip install -r requirements.txt
 
 ### 2. Configurar variáveis de ambiente
 
-Copie `.env.example` para `.env` e preencha:
+Copie `.env.example` para `.env` e preencha com suas credenciais:
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env`:
+Variáveis obrigatórias no `.env`:
 
 ```env
-# LangSmith (obrigatório)
-LANGSMITH_TRACING=true
-LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-LANGSMITH_API_KEY=ls__...          # Sua API Key do LangSmith
-LANGSMITH_PROJECT=meu-projeto
-USERNAME_LANGSMITH_HUB=meu-usuario # Seu username no LangSmith Hub
+LANGSMITH_API_KEY=ls__...              # Sua API Key do LangSmith
+LANGSMITH_PROJECT=nome-do-projeto
+USERNAME_LANGSMITH_HUB=seu-username   # Username do LangSmith Hub
 
-# Google Gemini (free tier)
-GOOGLE_API_KEY=AIza...
-LLM_PROVIDER=google
-LLM_MODEL=gemini-2.5-flash
-EVAL_MODEL=gemini-2.5-flash
+# Escolha um provider:
+LLM_PROVIDER=google                   # ou openai
+LLM_MODEL=gemini-2.5-flash            # ou gpt-4o-mini
+EVAL_MODEL=gemini-2.5-flash           # ou gpt-4o-mini
+
+GOOGLE_API_KEY=AIza...                # se usar Google
+OPENAI_API_KEY=sk-proj-...            # se usar OpenAI
 ```
 
-> **Como descobrir seu USERNAME_LANGSMITH_HUB:** Publique qualquer prompt no LangSmith Hub, abra-o e clique no ícone 🔒 para ver seu username.
+> **Como descobrir seu USERNAME_LANGSMITH_HUB:** Acesse [smith.langchain.com/prompts](https://smith.langchain.com/prompts), crie um prompt público e seu username aparecerá na URL.
 
 ### 3. Executar pull dos prompts ruins
 
@@ -137,9 +136,9 @@ EVAL_MODEL=gemini-2.5-flash
 python src/pull_prompts.py
 ```
 
-### 4. Refatorar o prompt (manual)
+### 4. Refatorar o prompt
 
-Edite `prompts/bug_to_user_story_v2.yml` com suas melhorias.
+Edite `prompts/bug_to_user_story_v2.yml` aplicando as técnicas de Prompt Engineering.
 
 ### 5. Fazer push dos prompts otimizados
 
@@ -190,11 +189,44 @@ Todas as 5 métricas devem atingir **≥ 0.8**:
 
 Avaliado sobre 15 exemplos do dataset `datasets/bug_to_user_story.jsonl` usando `gpt-4o-mini` como LLM principal e avaliador (padrão LLM-as-Judge).
 
-### Dashboard LangSmith
+### Evidências no LangSmith
 
-Projeto: https://smith.langchain.com/projects/MBA
+**Dashboard do projeto:** https://smith.langchain.com/projects/MBA
 
-Prompt publicado: https://smith.langchain.com/hub/mba-testewalter/bug_to_user_story_v2
+**Prompt publicado:** https://smith.langchain.com/hub/mba-testewalter/bug_to_user_story_v2
+
+**Output do terminal — avaliação final:**
+
+```
+==================================================
+Prompt: mba-testewalter/bug_to_user_story_v2
+==================================================
+
+Métricas Derivadas:
+  - Helpfulness: 0.81 ✓
+  - Correctness: 0.82 ✓
+
+Métricas Base:
+  - F1-Score: 0.84 ✓
+  - Clarity: 0.82 ✓
+  - Precision: 0.81 ✓
+
+--------------------------------------------------
+MÉDIA GERAL: 0.8210
+--------------------------------------------------
+
+✅ STATUS: APROVADO - Todas as métricas >= 0.8
+
+==================================================
+RESUMO FINAL
+==================================================
+
+Prompts avaliados: 1
+Aprovados: 1
+Reprovados: 0
+
+✅ Todos os prompts atingiram todas as métricas >= 0.8!
+```
 
 ---
 
